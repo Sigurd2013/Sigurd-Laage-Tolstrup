@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "Event": {
+      "title": "Event",
+      "description": "Et event arrangeret af Hammel Handel & Erhverv",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Navnet på eventet"
+        },
+        "description": {
+          "type": "string",
+          "description": "Beskrivelse af eventet"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Dato og tidspunkt for eventet"
+        },
+        "location": {
+          "type": "string",
+          "description": "Hvor eventet finder sted"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL til et billede for eventet"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Hvornår dokumentet blev oprettet"
+        }
+      },
+      "required": ["title", "date", "description"]
+    }
+  },
+  "firestore": {
+    "/events": {
+      "schema": "Event",
+      "description": "Samling af alle events"
+    }
+  }
+}

@@ -1,0 +1,68 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: events
+// Document ID: auto-generated
+// Fields:
+//   - title: string (required, size: 1-100) - Navnet på eventet
+//   - description: string (required, size: 1-2000) - Beskrivelse af eventet
+//   - date: timestamp (required) - Dato og tidspunkt for eventet
+//   - location: string (optional, size: 0-200) - Hvor eventet finder sted
+//   - imageUrl: string (optional, size: 0-500) - URL til et billede for eventet
+//   - createdAt: timestamp (required) - Hvornår dokumentet blev oprettet
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "annetolstrup00@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEvent(data) {
+      return data.keys().hasAll(['title', 'description', 'date', 'createdAt']) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.description is string && data.description.size() >= 1 && data.description.size() <= 2000 &&
+             data.date is timestamp &&
+             data.createdAt is timestamp &&
+             (!('location' in data) || (data.location is string && data.location.size() <= 200)) &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 500));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /events/{eventId} {
+      // Alle kan læse events (offentlig information)
+      allow read: if true;
+      
+      // Kun loggede brugere kan indsende et arrangement (med validering)
+      allow create: if isAuthenticated() && 
+                      isValidEvent(request.resource.data) && 
+                      request.resource.data.createdAt == request.time;
+      
+      // Kun admins kan opdatere eller slette events
+      allow update: if isAdmin() && isValidEvent(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}
